@@ -1,0 +1,8 @@
+https://www.digitalocean.com/community/tutorials/calling-c-functions-from-python
+https://medium.com/ai-innovation/how-to-create-c-c-dynamic-link-libraries-in-windows-28abefc988c9
+https://gernotklingler.com/blog/creating-using-shared-libraries-different-compilers-different-operating-systems/
+https://www3.cs.stonybrook.edu/~alee/g++/g++.html
+
+
+
+https://www.youtube.com/watch?v=N3tRFayqVtk

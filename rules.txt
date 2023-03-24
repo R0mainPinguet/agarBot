@@ -1,0 +1,32 @@
+# GENERAL #
+player 1
+bots_count 0
+
+# WINDOW #
+FPS 60
+width 800
+height 800
+MAX_TIME 18000
+
+
+# MAP #
+borders_X 800
+borders_Y 800
+
+# FOOD #
+max_food 50
+max_size 100
+
+# PROJECTILES #
+max_projectiles 50
+speed_loss 1.03
+
+# BLOB #
+MAX_SUB_BLOB 16
+df_speed 3
+df_size 1000
+shoot_threshold 1000
+division_threshold 1000
+viscosity 500
+projectile_percentage 0.08
+merge_time 300
