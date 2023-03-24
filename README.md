@@ -15,5 +15,11 @@ Features :
 	- Play with bots ( Not Done )
 
 
+Controls if you want to play
+
+	* Mouse to move
+	* Space to split
+	* W to shoot food
+	
 
 
