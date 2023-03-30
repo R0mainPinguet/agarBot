@@ -2,6 +2,8 @@ import pygame
 import numpy as np
 from Projectiles import Projectiles
 
+RED = (255,0,0)
+
 WHITE = 255,255,255
 GREY = 128,128,128
 
@@ -26,13 +28,14 @@ class Bot:
         #= Default speed and size =#
         self.df_speed = rules["df_speed"]
         self.df_size = rules["df_size"]
+        self.global_size = self.df_size
         
         #=  Number of frames before merging two sub cells =#
         #= For example, 600 frames = 10 seconds at 60 fps =#
         self.merge_time = rules["merge_time"]
         
         #= The blob can shoot projectiles after having a size bigger than shoot_projectile =#
-        self.shoot_threshold = rules["shoot_threshold "]
+        self.shoot_threshold = rules["shoot_threshold"]
         
         #= The blob can split itself after having a size bigger than division_threshold =#
         self.division_threshold = rules["division_threshold"]
@@ -47,11 +50,9 @@ class Bot:
         #= Column 0 1 : Position Vector =#
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
-        self.sub_blobs = np.ones((self.MAX_SUB_BLOB,5),dtype="float")
-        
-        self.sub_blobs[0,0:2] = pos
-        self.sub_blobs[0,2:4] = np.array([0,0])
-        self.sub_blobs[0,4] = self.df_size
+        blobs_infos[self.index,0:2] = [10,10]
+        blobs_infos[self.index,2:4] = [0,0]
+        blobs_infos[self.index,4] = self.df_size
         #================================#
         
         #= Split array =#
@@ -60,6 +61,9 @@ class Bot:
         self.splitArray = np.zeros((self.MAX_SUB_BLOB,3),dtype="int")
         self.pairs = 0
         #==#
+        
+        #= Dictionary of possible inputs =#
+        self.informations = dict()
 
         
     # Bot AI Decomposition :
@@ -79,10 +83,46 @@ class Bot:
     #= 4 - Learn (?)
     #==  Reward or not according to the player current state.
     
+    def update(self,blobs_list,blobs_infos):
+        
+        self.compute_size()
+        
+    
+    
+    def compute_size(self,blobs_infos):
+        self.global_size = np.sum(blobs_infos[self.index:self.index+self.actual_sub_blob,4])
+        
+    
+    def observe(self,blobs_list,blobs_infos):
+        '''
+        Collect informations on it's surrounding, such as :
+            - Closest ennemy distance and index
+            - Closest food/projectile distance and index
+            - Own size, rank
+        '''
+        
+        #= bot size =#
+        self.informations["own_size"] = self.global_size
+        
+        
+        
+        
+        
+    def think(self):
+        '''
+        Send these informations to the bot's brain, and retrieve the output
+        '''
+    
+    def act(self):
+        '''
+        Act according to the brain output
+        '''
+    
     
     def eat_food(self,index,amount):
         self.sub_blobs[index,4] += amount 
-        
+    
+    
     def move(self,target_pos):
                
         for i in range(self.actual_sub_blob):
@@ -98,6 +138,7 @@ class Bot:
             new_pos = self.sub_blobs[i,0:2] + self.sub_blobs[i,2:4]
             
             
+            #= Collision part =#
             for j in range(self.actual_sub_blob):
                 
                 if(j!=i):
@@ -111,7 +152,7 @@ class Bot:
                         dir = dir / np.linalg.norm(dir)
                         
                         new_pos = new_pos + dir*(radius_i+radius_j-dist)
-                        
+            #==#
             
             self.sub_blobs[i,0:2] = new_pos
             
@@ -215,18 +256,18 @@ class Bot:
             
         
         
-    def show(self,screen,width,height,camPos):
+    def show(self,screen,width,height,camPos,blobs_infos):
         
         for i in range(self.actual_sub_blob):
-            screen_pos = pygame.math.Vector2(width/2+self.sub_blobs[i,0],height/2+self.sub_blobs[i,1]) - camPos
+            screen_pos = pygame.math.Vector2(width/2+blobs_infos[self.index+i,0],height/2+blobs_infos[self.index+i,1]) - camPos
 
             if(screen_pos.x > 0 and screen_pos.y > 0 and screen_pos.x < width and screen_pos.y < height):
                 
-                radius = np.sqrt( self.sub_blobs[i,4] / np.pi )
-                if(i==0):
-                    pygame.draw.circle(screen, WHITE, screen_pos , radius )
-                else:
-                    pygame.draw.circle(screen, GREY , screen_pos , radius )
+                radius = np.sqrt( blobs_infos[self.index+i,4] / np.pi )
+                
+                pygame.draw.circle(screen, RED , screen_pos , radius )
+            
+                pygame.draw.circle(screen, RED , screen_pos , radius )
     
     
     

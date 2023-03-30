@@ -7,7 +7,7 @@ from Food import Food
 from Projectiles import Projectiles
 from Bot import Bot
 
-from utils import loadRules
+from utils import loadRules,compute_ranks
 
 rules = loadRules("rules.txt")
 print(rules)
@@ -17,9 +17,9 @@ BLACK = (0,0,0)
 
 pygame.init()
 
-# If player=0, only the bots play, and nothing is displayed
-# If player=1, the player will be able to interact with the bots on the screen during a game
-player , bots_count = rules["player"] , rules["bots_count"]
+# If player_count=0, only the bots play, and nothing is displayed
+# If player_count=1, the player will be able to interact with the bots on the screen during a game
+player_count , bots_count = rules["player_count"] , rules["bots_count"]
 #===#
 
 #= Window parameters =#
@@ -37,7 +37,7 @@ center_vect = pygame.math.Vector2(borders_X/2,borders_Y/2)
 blobs_list = []
 
 # Holds the player and the bots position, speed, and size
-blobs_infos = np.ones((rules["MAX_SUB_BLOB"] * (player+bots_count) , 5) , dtype="float")
+blobs_infos = np.ones((rules["MAX_SUB_BLOB"] * (player_count+bots_count) , 5) , dtype="float")
 
 pygame.init()
 pygame.display.set_caption('Agario')
@@ -66,7 +66,7 @@ cam = Camera(rules)
 blobs_list.append(player)
 
 for i in range(bots_count):
-    bots_list.append(Bot(rules,(i+player)*rules["MAX_SUB_BLOB"],blobs_infos))
+    blobs_list.append(Bot(rules,(i+player_count)*rules["MAX_SUB_BLOB"],blobs_infos))
     
 food = Food(rules)
 projectiles = Projectiles(rules)
@@ -101,22 +101,32 @@ while running:
             #=- Appuie sur Espace
             if event.key == pygame.K_SPACE:
                 player.split(target_pos,blobs_infos)
-                
+    
+    
     #= Background Update =#
     screen.blit(background, background_rect)
     screen.blit(update_fps(), (10,10))
     #====#
     
     #= Updates =#
-    projectiles.move()
     projectiles.update(blobs_list,blobs_infos)
     
-    player.move(target_pos,blobs_infos)
-    player.deflate(blobs_infos)
-    player.join(blobs_infos)
+    player.update(target_pos,blobs_infos)
     
+    for i in range(player_count,bots_count):
+        blobs_list[i].update(blobs_list,blobs_infos)
+        
     food.update(blobs_list,blobs_infos)
     #====#
+    
+    
+    #=== BOT INPUTS ==#
+    
+    #= Compute the rank order =#
+    ranks = compute_ranks(blobs_list,blobs_infos)
+    #==#
+    
+    #======#
     
     
     #= Displays =#
@@ -124,10 +134,9 @@ while running:
     
     projectiles.show(screen,width,height,cam.pos)
     
-    player.show(screen,width,height,cam.pos,blobs_infos)
-    for i in range(bots_count):
-        bots.show(screen,width,height,cam.pos,blobs_infos)
-    
+    for i in range(player_count+bots_count):
+        blobs_list[i].show(screen,width,height,cam.pos,blobs_infos)
+       
     cam.update(player,blobs_infos)
     
     pygame.display.flip()

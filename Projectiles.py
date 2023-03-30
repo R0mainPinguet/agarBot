@@ -24,6 +24,12 @@ class Projectiles:
         self.speed_loss = rules["speed_loss"]
         
     
+    def update(self,blobs_list,blobs_infos):
+        
+        self.move()
+        self.check_collisions(blobs_list,blobs_infos)
+        
+        
     def add(self, position ,  dir , size , borders ):
         
         if(self.actual_projectiles_count < self.max_projectiles):
@@ -47,7 +53,7 @@ class Projectiles:
         self.projectiles[0:self.actual_projectiles_count,1] = np.clip(self.projectiles[0:self.actual_projectiles_count,1] , 0 , self.borders.y)
     
     
-    def update(self,blobs_list,blobs_infos):
+    def check_collisions(self,blobs_list,blobs_infos)
         i = 0
         
         while (i < self.actual_projectiles_count):

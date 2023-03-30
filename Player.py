@@ -27,6 +27,7 @@ class Player:
         #= Default speed and size =#
         self.df_speed = rules["df_speed"]
         self.df_size = rules["df_size"]
+        self.global_size = self.df_size
         
         #=  Number of frames before merging two sub cells =#
         #= For example, 600 frames = 10 seconds at 60 fps =#
@@ -49,7 +50,7 @@ class Player:
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
         blobs_infos[0,0:2] = [bx/2,by/2]
-        blobs_infos[0,2:4] = np.array([0,0])
+        blobs_infos[0,2:4] = [0,0]
         blobs_infos[0,4] = self.df_size
         #================================#
         
@@ -60,8 +61,20 @@ class Player:
         self.pairs = 0
         #==#
 
+    
+    def update(self,target_pos,blobs_infos)
         
+        self.compute_size(blobs_infos)
+        
+        self.move(target_pos,blobs_infos)
+        self.deflate(blobs_infos)
+        self.join(blobs_infos)
+    
 
+    def compute_size(self,blobs_infos):
+        self.global_size = np.sum(blobs_infos[0:self.actual_sub_blob,4])
+        
+        
     def eat_food(self,index,amount,blobs_infos):
         blobs_infos[index,4] += amount 
         

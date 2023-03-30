@@ -1,6 +1,6 @@
 # GENERAL #
-player 1
-bots_count 0
+player_count 1
+bots_count 1
 
 # WINDOW #
 FPS 60

@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 
-RED = (255,0,0)
+GREEN = (0,255,0)
 
 class Food:
 
@@ -54,4 +54,4 @@ class Food:
                 if(screen_pos.x > 0 and screen_pos.y > 0 and screen_pos.x < width and screen_pos.y < height):
                     radius = np.sqrt(self.food[i,2] / np.pi)
                     
-                    pygame.draw.circle(screen, RED , screen_pos , radius )
+                    pygame.draw.circle(screen, GREEN , screen_pos , radius )
