@@ -99,9 +99,12 @@ class Neuron:
         
         print("-- ID = " + str(self.ID) )
         
+        if(self.type!=0):
+            print("- Expects " + str(len(self.feeders)) + " input(s) before shooting")
+        
         if(self.type!=2 and self.output_neurons_count!=0 ):
             
-            print("Connected to " + str(self.output_neurons_count) + " neurons :")
+            print("Connected to " + str(self.output_neurons_count) + " neuron(s) :")
             
             for target in self.targets:
                 weight,neuron = target
@@ -123,14 +126,29 @@ class Neuron:
 
 class Input_Random(Neuron):
     
-    def shoot(self,data):        
-        return(np.random.rand() * 2 - 1)
-
+    def shoot(self,data):
+        
+        out = np.random.rand() * 2 - 1
+        
+        for element in self.targets:
+            
+            weight,neuron = element
+            
+            neuron.input_signals.append( out * weight )
+                
 class Input_Sinusoidal(Neuron):
     
     # Period = 600 frames ( = 10 seconds at 60 fps )
     def shoot(self,data):
-        return( np.sin(2 *  np.pi * data["frame"]/600) )
+        
+        out = np.sin(2 *  np.pi * data["frame"]/600)
+
+        for element in self.targets:
+            
+            weight,neuron = element
+            
+            neuron.input_signals.append( out * weight )
+            
 
 class Input_Closest_Ennemy_Distance(Neuron):
 
@@ -156,6 +174,8 @@ class Input_Host_Rank(Neuron):
 
 
 
+
+
 class Internal_Neuron(Neuron):
     
     def shoot(self):
@@ -171,23 +191,32 @@ class Internal_Neuron(Neuron):
             neuron.input_signals.append( math.tanh(s) * weight )
 
 
-
-class Output_Move_West(Neuron):
+class Output_Neuron(Neuron):
+    
+    def shoot(self):
+        s = 0
+        
+        for input in self.input_signals:
+            s += input
+        
+        return(math.tanh(s))
+            
+class Output_Move_West(Output_Neuron):
     pass
 
-class Output_Move_North(Neuron):
+class Output_Move_North(Output_Neuron):
     pass
 
-class Output_Move_East(Neuron):
+class Output_Move_East(Output_Neuron):
     pass
 
-class Output_Move_South(Neuron):
+class Output_Move_South(Output_Neuron):
     pass
 
-class Ouput_Move_Closest_Ennemy(Neuron):
+class Ouput_Move_Closest_Ennemy(Output_Neuron):
     pass
 
-class Ouput_Move_Closest_Ennemy(Neuron):
+class Ouput_Move_Closest_Ennemy(Output_Neuron):
     pass
 
 
@@ -198,24 +227,41 @@ class Gene:
         
         self.sequence = np.random.randint(0,2,32)
         
+        temp_list = []
+        for x in available_internal_neurons:
+            temp_list += x
+        
         # Proportion of input neurons among input + internal neurons
-        ratio1 = len(available_input_neurons)/(len(available_input_neurons)+len(available_internal_neurons))
+        ratio1 = len(available_input_neurons)/(len(available_input_neurons)+len(temp_list))
         
-        # Proportion of internal neurons among internal + output neurons
-        ratio2 = len(available_internal_neurons)/(len(available_internal_neurons)+len(available_output_neurons))
-        
+        # Code the input type and ID #
         if(rd.random() < ratio1):
             self.sequence[0] = 0
-            choice = rd.choice( available_input_neurons )            
+            choice = rd.choice( available_input_neurons )
+            
+            # Proportion of internal neurons among internal + output neurons
+            ratio2 = len(temp_list)/(len(temp_list)+len(available_output_neurons))
+            
         else:
+            
             self.sequence[0] = 1
-            choice = rd.choice( available_internal_neurons )
+            choiceLayer_Input = rd.randint(0,len(available_internal_neurons)-1)
+            choice = rd.choice( available_internal_neurons[choiceLayer_Input] )
+            
+            temp_list2 = []
+            for i in range(choiceLayer_Input+1,len(available_internal_neurons)):
+                temp_list2 += available_internal_neurons[i]
+                
+            # Proportion of remaining internal neurons among remaining internal + output neurons
+            ratio2 = len(temp_list2)/(len(temp_list2)+len(available_output_neurons))
         
         self.sequence[1:8] = int2array(choice,7)
         
-        if(rd.random() < ratio2):
+        # Code the output type and ID #
+        if(rd.random() < ratio2 and self.sequence[0]==1 and choiceLayer_Input<len(available_internal_neurons)-1):
             self.sequence[8] = 0
-            choice = rd.choice( available_internal_neurons )
+            choiceLayer_Output = rd.randint(choiceLayer_Input+1,len(available_internal_neurons)-1)
+            choice = rd.choice( available_internal_neurons[choiceLayer_Output] )
         else:
             self.sequence[8] = 1
             choice = rd.choice( available_output_neurons )
@@ -271,19 +317,19 @@ class Gene:
 
 class Brain:
     
-    def __init__(self,genome_size,internal_layers,autoCorrects):
+    def __init__(self,genome_size):
         '''
         genome_size (int) -> The number of connexions between neurons.
         
-        autoCorrects (bool) -> If True, the Brain will only generate valid connexions.
+        onlyValid (bool) -> If True, the Brain will only generate valid connexions.
         Note that if it's False, the code will still clean neurons with no inputs or outputs.
         This is to optimize during runtime, as we don't have to use these neurons.
         '''
-                
-        autoCorrects = False
+        
+        onlyValid = False
         
         available_input_neurons = [0,1]
-        available_internal_neurons = [0]
+        available_internal_neurons = [[0,1,2],[3,4]] # 2 Layers with respectively 3 and 2 internal neurons
         available_output_neurons = [0,1,2,3,4]
         
         valid = False
@@ -297,7 +343,7 @@ class Brain:
                 self.genome.append( Gene( available_input_neurons , 
                                         available_internal_neurons , 
                                         available_output_neurons ) )
-            
+        
             #== Create the input neurons, internal neurons, output neurons ==#
             self.input_neurons = []
             self.internal_neurons= []
@@ -306,8 +352,10 @@ class Brain:
             for id in available_input_neurons:
                 self.input_neurons.append( get_input_neuron(id) )
             
-            for id in available_internal_neurons:
-                self.internal_neurons.append( Internal_Neuron(1,id) )
+            for i in range(len(available_internal_neurons)):
+                self.internal_neurons.append([])
+                for id in available_internal_neurons[i]:
+                    self.internal_neurons[-1].append( Internal_Neuron(1,id) )
             
             for id in available_output_neurons:
                 self.output_neurons.append( get_output_neuron(id) )
@@ -331,18 +379,37 @@ class Brain:
                 
                 # Input is from an internal neuron
                 else:
-                    neuron = self.internal_neurons[ inputID ]
-                
+                    
+                    found = False
+                    input_layer = 0
+                    while(not found):                        
+                        for x in self.internal_neurons[input_layer]:
+                            if(x.ID == inputID):
+                                neuron = x
+                                found = True
+                        
+                        input_layer += 1
+                                        
                 neuron.output_neurons_count += 1
-                
                 
                 # Output is to an internal neuron
                 if(sinkType == 0):
-                    neuron.targets.append( ( weight , self.internal_neurons[sinkID] ) )
                     
-                    self.internal_neurons[sinkID].input_neurons_count += 1
-                    self.internal_neurons[sinkID].feeders.append(neuron)
-                
+                    found = False
+                    input_layer = 0
+                    while(not found):                        
+                        for x in self.internal_neurons[input_layer]:
+                            if(x.ID == sinkID):
+                                
+                                neuron.targets.append( ( weight , x ) )
+                                
+                                x.input_neurons_count += 1
+                                x.feeders.append(neuron)
+                                
+                                found = True
+                        
+                        input_layer += 1
+                                
                 # Output is to an output neuron
                 else:
                     neuron.targets.append( ( weight , self.output_neurons[sinkID] ) )
@@ -373,27 +440,30 @@ class Brain:
                             
                         self.input_neurons.pop(i)
                 
-                for i in range(len(self.internal_neurons)-1,-1,-1):
-                    neuron = self.internal_neurons[i]
-                    if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
-                        found_lonely = True
-                        
-                        # Remove the input from neurons forward
-                        for target in neuron.targets:
-                            weight,neuron2 = target
+                
+                for i in range(len(self.internal_neurons)):
+                    neuron_layer = self.internal_neurons[i]
+                    for j in range(len(self.internal_neurons[i])-1,-1,-1):
+                        neuron = self.internal_neurons[i][j]
+                        if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
+                            found_lonely = True
                             
-                            neuron2.input_neurons_count -= 1
-                            neuron2.feeders.remove(neuron)
-                        
-                        # Remove the target from neurons backward
-                        for feeder in neuron.feeders:
-                            feeder.output_neuron_count -= 1
-                            
-                            for j in range(len(feeder.targets)-1,-1,-1):
-                                if(feeder.targets[j][1] == neuron):
-                                    feeder.targets.pop(j)
+                            # Remove the input from neurons forward
+                            for target in neuron.targets:
+                                weight,neuron2 = target
                                 
-                        self.internal_neurons.pop(i)
+                                neuron2.input_neurons_count -= 1
+                                neuron2.feeders.remove(neuron)
+                            
+                            # Remove the target from neurons backward
+                            for feeder in neuron.feeders:
+                                feeder.output_neuron_count -= 1
+                                
+                                for k in range(len(feeder.targets)-1,-1,-1):
+                                    if(feeder.targets[k][1] == neuron):
+                                        feeder.targets.pop(k)
+                                    
+                            self.internal_neurons[i].pop(j)
                         
                 for i in range(len(self.output_neurons)-1,-1,-1):
                     neuron = self.output_neurons[i]
@@ -411,25 +481,66 @@ class Brain:
                         self.output_neurons.pop(i)
             #===--===#
         
-            if(autoCorrects and (len(self.input_neurons)==0 or len(self.output_neurons)==0)):
+            if(onlyValid and (len(self.input_neurons)==0 or len(self.output_neurons)==0)):
                 valid = False
-                
+    
+    def shoot(self,data):
+        
+        for neuron in self.input_neurons:
+            neuron.shoot(data)
+        
+        for i in range(len(self.internal_neurons)):
+            for neuron in self.internal_neurons[i]:
+                neuron.shoot()
+        
+        outputs = []
+        for neuron in self.output_neurons:
+            res = neuron.shoot()
+            outputs.append([neuron.ID,res])
+        
+        
+        #= Cleaning the neuron input system =#
+        for neuron in self.input_neurons:
+            neuron.clear()
+        
+        for i in range(len(self.internal_neurons)):
+            for neuron in self.internal_neurons[i]:
+                neuron.clear()
+        
+        for neuron in self.output_neurons:
+            neuron.clear()
+        #====================================#
+        
+        return(outputs)
+
     
     def __str__(self):
+        
+        for gene in self.genome:
+            print(gene)
         
         
         print("#== List of Neurons ==#")
         
         print("#=====================#")
-        
+        print("#       Input         #")
+        print("#=====================#")
+
         for neuron in self.input_neurons:
             print(neuron)
         
         print("#=====================#")
+        print("#      Internal       #")
+        print("#=====================#")
         
-        for neuron in self.internal_neurons:
-            print(neuron)
+        for i in range(len(self.internal_neurons)):
+            if(len(self.internal_neurons[i])!=0):
+                print("Layer " + str(i))    
+                for neuron in self.internal_neurons[i]:
+                    print(neuron)
 
+        print("#=====================#")
+        print("#       Output        #")
         print("#=====================#")
         
         for neuron in self.output_neurons:
