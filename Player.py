@@ -3,11 +3,12 @@ import numpy as np
 from Projectiles import Projectiles
 from Food import Food
 
+from utils import deflate_func , speed_coeff_func
+
 WHITE = 255,255,255
 GREY = 128,128,128
 
-def deflate_func(x):
-    return( max(x-2000,0)/10000 )
+
     
 
 class Player:
@@ -54,6 +55,8 @@ class Player:
         blobs_infos[0,4] = self.df_size
         #================================#
         
+        self.compute_personal_data(blobs_infos)
+        
         #= Split array =#
         #= Column 0 1 : Pair of index =#
         #= Column 2  : Remaining frames =#
@@ -62,21 +65,24 @@ class Player:
         #==#
 
     
-    def update(self,target_pos,blobs_infos)
+    def update(self,target_pos,blobs_infos):
         
-        self.compute_size(blobs_infos)
+        self.compute_personal_data(blobs_infos)
         
         self.move(target_pos,blobs_infos)
         self.deflate(blobs_infos)
         self.join(blobs_infos)
     
 
-    def compute_size(self,blobs_infos):
+    def compute_personal_data(self,blobs_infos):
+        '''
+        Compute the size, center of gravity
+        '''
+        
         self.global_size = np.sum(blobs_infos[0:self.actual_sub_blob,4])
+        self.center_of_gravity = np.average(blobs_infos[0:self.actual_sub_blob,0:2] , axis=0)
         
-        
-    def eat_food(self,index,amount,blobs_infos):
-        blobs_infos[index,4] += amount 
+
         
     def move(self,target_pos,blobs_infos):
                
@@ -86,7 +92,7 @@ class Player:
             direction = target_pos - pygame.math.Vector2(blobs_infos[i,0],blobs_infos[i,1])
             direction.normalize_ip()
             
-            speedCoeff = np.exp((-max(blobs_infos[i,4],2*self.df_size)+2*self.df_size)/self.viscosity)
+            speedCoeff = speed_coeff_func(blobs_infos[i,4],self.df_size,self.viscosity) 
             
             blobs_infos[i,2:4] = ( blobs_infos[i,2:4] + direction * self.df_speed * speedCoeff) / 2
             
@@ -175,7 +181,6 @@ class Player:
             
             for i in range(self.pairs):
                 self.splitArray[i,2] -= 1
-                
                 
                 if( self.splitArray[i,2] == 0 ):
                     

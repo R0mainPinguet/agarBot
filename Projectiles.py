@@ -53,7 +53,7 @@ class Projectiles:
         self.projectiles[0:self.actual_projectiles_count,1] = np.clip(self.projectiles[0:self.actual_projectiles_count,1] , 0 , self.borders.y)
     
     
-    def check_collisions(self,blobs_list,blobs_infos)
+    def check_collisions(self,blobs_list,blobs_infos):
         i = 0
         
         while (i < self.actual_projectiles_count):
@@ -66,7 +66,8 @@ class Projectiles:
                     radius = np.sqrt(blobs_infos[blob.index+k,4] / np.pi)
                     
                     if(np.linalg.norm(blobs_infos[blob.index+k,0:2] - self.projectiles[i,0:2]) < radius):
-                        blob.eat_food(k,self.projectiles[i,4],blobs_infos)
+                        
+                        blobs_infos[k,4] += self.projectiles[i,4]
         
                         for j in range(i+1,self.actual_projectiles_count):
                             self.projectiles[j-1] = self.projectiles[j]

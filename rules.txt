@@ -8,7 +8,6 @@ width 800
 height 800
 MAX_TIME 18000
 
-
 # MAP #
 borders_X 800
 borders_Y 800
@@ -27,6 +26,9 @@ df_speed 3
 df_size 1000
 shoot_threshold 1000
 division_threshold 1000
-viscosity 500
+viscosity 10000
 projectile_percentage 0.08
 merge_time 300
+
+# BOT #
+genomeSize 5

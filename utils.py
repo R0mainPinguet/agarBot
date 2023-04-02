@@ -53,49 +53,39 @@ def int2array(integer , length):
     
     return(arr)
 
+def deflate_func(x):
+    return( max(x-2000,0)/10000 )
 
+def speed_coeff_func(size,df_size,viscosity):
+    return( np.exp((-max(size,2*df_size)+2*df_size)/viscosity) )
 
 def compute_ranks(blobs_list,blobs_infos):
     vals = []
     
     for i in range(len(blobs_list)):
         
-        vals.append(np.sum(blobs_infos[blobs_list[i].index : blobs_list[i].index+blobs_list[i].actual_sub_blobs,4]) )
-        
+        vals.append(np.sum(blobs_infos[blobs_list[i].index : blobs_list[i].index+blobs_list[i].actual_sub_blob,4]) )
 
     return(np.flip(np.argsort(vals)))
 
-# def compute_closest_ennemy(self,blobList,index):
-#     '''
-#     Compute the closest ennemy index
-#     '''
-#     closest_index = 0
-#     closest_distance = 1e9
-#     for i in range(len(blobList)):
-#         if(i != closest_index):
-#             
-#             dist = np.linalg.norm(blobList[i].sub_blobs[0,0:2] - blobs_infos[0,0:2])
-#             
-#             if(dist < closest_distance):
-#                 closest_distance = dist
-#                 closest_index = i
-#         
-#     self.closest_ennemy_index = closest_index
-#     
-# def compute_closest_food(self,food):
-#     '''
-#     Compute the closest food index
-#     '''        
-#     pass
-#     # self.closest_food_index = 
-# 
-#     
-# def compute_closest_projectile(self,projectiles):
-#     '''
-#     Compute the closest projectile index
-#     '''
-#     pass
-#     # self.closest_projectile_index = 
+
+def compute_all_distances(blobList):
+    '''
+    Compute the distances of all players between each other
+    '''
+    
+    distances = np.zeros((len(blobList),len(blobList)),dtype="float")
+    
+    for i in range(len(blobList)-1):
+        for j in range(i+1,len(blobList)):
+                
+                distances[i,j] = np.linalg.norm( blobList[j].center_of_gravity - blobList[i].center_of_gravity )
+                distances[j,i] = distances[i,j]
+        
+        distances[i,i] = 1e9
+    
+    return(distances)
+
     
     
     
