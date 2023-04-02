@@ -10,9 +10,11 @@ Features :
 
 	- Play alone on the map ( Done ) ( Boring )
 
+	- Play with the ( stupid ) bots ( Fun )
+	
 	- Train bots ( Not Done )
 	
-	- Play with bots ( Not Done )
+	- Play with ( smart ) bots ( Not Done )
 
 
 Controls if you want to play
