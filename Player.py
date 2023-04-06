@@ -33,6 +33,8 @@ class Player:
         #=  Number of frames before merging two sub cells =#
         #= For example, 600 frames = 10 seconds at 60 fps =#
         self.merge_time = rules["merge_time"]
+        self.collisions_test = np.zeros(self.MAX_SUB_BLOB,dtype="bool")
+        self.collisions_time = np.zeros(self.MAX_SUB_BLOB,dtype="float")
         
         #= The blob can shoot projectiles after having a size bigger than shoot_projectile =#
         self.shoot_threshold = rules["shoot_threshold"]
@@ -57,13 +59,6 @@ class Player:
         
         self.compute_personal_data(blobs_infos)
         
-        #= Split array =#
-        #= Column 0 1 : Pair of index =#
-        #= Column 2  : Remaining frames =#
-        self.splitArray = np.zeros((self.MAX_SUB_BLOB,3),dtype="int")
-        self.pairs = 0
-        #==#
-
     
     def update(self,target_pos,blobs_infos):
         
@@ -72,7 +67,6 @@ class Player:
         self.move(target_pos,blobs_infos)
         self.deflate(blobs_infos)
         self.join(blobs_infos)
-    
 
     def compute_personal_data(self,blobs_infos):
         '''
@@ -81,9 +75,9 @@ class Player:
         
         self.global_size = np.sum(blobs_infos[0:self.actual_sub_blob,4])
         self.center_of_gravity = np.average(blobs_infos[0:self.actual_sub_blob,0:2] , axis=0)
-        
-
-        
+    
+    
+    
     def move(self,target_pos,blobs_infos):
                
         for i in range(self.actual_sub_blob):
@@ -98,12 +92,11 @@ class Player:
             
             new_pos = blobs_infos[i,0:2] + blobs_infos[i,2:4]
             
-            
             for j in range(self.actual_sub_blob):
                 
-                if(j!=i):
+                if((j!=i) and (self.collisions_test[j] or self.collisions_test[i])):
                     radius_j = np.sqrt(blobs_infos[j,4] / np.pi)
-                
+                    
                     # Collision !
                     dist = np.linalg.norm(new_pos - blobs_infos[j,0:2])
                     if( dist < radius_i+radius_j):
@@ -112,7 +105,6 @@ class Player:
                         dir = dir / np.linalg.norm(dir)
                         
                         new_pos = new_pos + dir*(radius_i+radius_j-dist)
-                        
             
             blobs_infos[i,0:2] = new_pos
             
@@ -134,7 +126,7 @@ class Player:
             
             size = blobs_infos[i,4]
             
-            if(size > self.df_size/8):
+            if(size > self.df_size):
                 
                 pos = pygame.math.Vector2(blobs_infos[i,0],blobs_infos[i,1])
                 radius = np.sqrt( size / np.pi )
@@ -154,7 +146,7 @@ class Player:
             
             size = blobs_infos[i,4]
             
-            if(size > self.division_threshold/8): 
+            if(size > self.division_threshold): 
 
                 radius = np.sqrt( size / np.pi )
                 
@@ -168,51 +160,54 @@ class Player:
                 blobs_infos[i,4] /= 2
                 blobs_infos[self.actual_sub_blob,4] = blobs_infos[i,4]
                 
-                #= Pairs Updates =#
-                self.splitArray[self.pairs] = np.array([i,self.actual_sub_blob,self.merge_time])
+                #= Collisions Updates =#
+                self.collisions_test[i] = True
+                self.collisions_test[self.actual_sub_blob] = True
+                
+                self.collisions_time[i] = self.merge_time 
+                self.collisions_time[self.actual_sub_blob] = self.merge_time 
                 
                 self.actual_sub_blob += 1
-                self.pairs += 1
                 
-                
+
     def join(self,blobs_infos):
+        '''
+        Deals with the merge time of sub_blobs, as well as when sub_blobs are re-joining after a split
+        '''
         
         if( self.actual_sub_blob > 1 ):
             
-            for i in range(self.pairs):
-                self.splitArray[i,2] -= 1
+            for i in range(self.actual_sub_blob):
                 
-                if( self.splitArray[i,2] == 0 ):
+                if(self.collisions_test[i]):
                     
-                    ind1 = self.splitArray[i,0]
-                    ind2 = self.splitArray[i,1]
+                    self.collisions_time[i] -= 1
+                    
+                    if( self.collisions_time[i] == 0 ):
+                        
+                        self.collisions_test[i] = False
+                        
+          
+        for i in range(self.actual_sub_blob-1):
+            radius_i = np.sqrt(blobs_infos[i,4] / np.pi)
+                
+            for j in range(i+1,self.actual_sub_blob):
+                radius_j = np.sqrt(blobs_infos[j,4] / np.pi)
+                
+                dist = np.linalg.norm( blobs_infos[i,0:2] - blobs_infos[j,0:2] )
+                
+                if( dist < max(radius_i,radius_j) ) :
                     
                     # Merge the two cells from the sub array
-                    blobs_infos[ind1,0:4] = (blobs_infos[ind1,0:4] + blobs_infos[ind2,0:4])/2
+                    blobs_infos[i,0:4] = (blobs_infos[i,0:4] + blobs_infos[j,0:4])/2
                     
-                    blobs_infos[ind1,4] += blobs_infos[ind2,4]
-                    
+                    blobs_infos[i,4] += blobs_infos[j,4]
                     
                     # Reorganize the array
-                    for j in range(ind2+1,self.actual_sub_blob):
-                        blobs_infos[j-1] = blobs_infos[j]
+                    for k in range(j+1,self.actual_sub_blob):
+                        blobs_infos[k-1] = blobs_infos[k]
                     
-                    
-                    # Update the indexes inside splitArray
-                    for j in range(self.pairs):
-                        
-                        if( j>=i and j+1<self.pairs ):
-                            self.splitArray[j] = self.splitArray[j+1]
-                        
-                        if(self.splitArray[j,0] > ind2):
-                            self.splitArray[j,0] -= 1
-                        
-                        if(self.splitArray[j,1] > ind2):
-                            self.splitArray[j,1] -= 1
-                        
-                    self.pairs -= 1
                     self.actual_sub_blob -= 1
-    
     
     def show(self,screen,width,height,camPos,blobs_infos):
         

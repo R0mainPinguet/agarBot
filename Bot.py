@@ -3,7 +3,7 @@ import numpy as np
 from Projectiles import Projectiles
 from Brain import Brain
 
-from utils import deflate_func,speed_coeff_func
+from utils import deflate_func,speed_coeff_func,check_collisions
 
 RED = (255,0,0)
 
@@ -29,7 +29,6 @@ class Bot:
         # The index inside blobs_list
         self.ID = index // rules["MAX_SUB_BLOB"]
         
-        
         bx , by = rules["borders_X"] , rules["borders_Y"]
         self.borders = pygame.math.Vector2(bx,by)
         
@@ -41,6 +40,8 @@ class Bot:
         #=  Number of frames before merging two sub cells =#
         #= For example, 600 frames = 10 seconds at 60 fps =#
         self.merge_time = rules["merge_time"]
+        self.collisions_test = np.zeros(self.MAX_SUB_BLOB,dtype="bool")
+        self.collisions_time = np.zeros(self.MAX_SUB_BLOB,dtype="float")
         
         #= The blob can shoot projectiles after having a size bigger than shoot_projectile =#
         self.shoot_threshold = rules["shoot_threshold"]
@@ -58,27 +59,21 @@ class Bot:
         #= Column 0 1 : Position Vector =#
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
-        blobs_infos[self.index,0:2] = [10,10]
+        angle = 2*np.pi*self.ID/rules["bots_count"]
+        blobs_infos[self.index,0:2] = [bx/2 + bx*np.cos(angle)/4 , by/2 + by*np.sin(angle)/4]
         blobs_infos[self.index,2:4] = [0,0]
         blobs_infos[self.index,4] = self.df_size
         #================================#
         
         self.compute_personal_data(blobs_infos)
         
-        #= Split array =#
-        #= Column 0 1 : Pair of index =#
-        #= Column 2  : Remaining frames =#
-        self.splitArray = np.zeros((self.MAX_SUB_BLOB,3),dtype="int")
-        self.pairs = 0
-        #==#
-        
         #= Brain part =#
         self.genomeSize = rules["genomeSize"]
         self.brain = Brain(self.genomeSize)
         
-        print("#== BRAIN ==#")
-        print(self.brain)
-        print("#====#")
+        # print("#== BRAIN ==#")
+        # print(self.brain)
+        # print("#====#")
         
         #= Dictionary of possible inputs =#
         self.informations = dict()
@@ -121,12 +116,17 @@ class Bot:
             - Closest food/projectile distance and index
             - Own size, rank
         '''
-        
+                
         #= bot size =#
-        self.informations["own_size"] = self.global_size
+        self.informations["size"] = self.global_size
         
+        self.informations["longest_distance"] = external_data["longest_distance"]
         #= Distance relative to the closest ennemy, food and projectile =#
-        self.informations["closest_ennemy_distance"] = np.min(external_data["distances"][self.ID])
+        closest_ennemy_index = np.argmin(external_data["distances"][self.ID])
+        
+        self.informations["closest_ennemy_distance"] = external_data["distances"][self.ID,closest_ennemy_index]
+        self.informations["closest_ennemy_index"] = closest_ennemy_index
+        self.informations["closest_ennemy_size"] = blobs_list[closest_ennemy_index].global_size
         
         # self.informations["closest_food_distance"] = self.closest_food_distance
         # self.informations["closest_projectile_distance"] = self.closest_projectile_distance
@@ -203,7 +203,7 @@ class Bot:
             
             for j in range(self.index,self.index+self.actual_sub_blob):
                 
-                if(j!=i):
+                if((j!=i) and (self.collisions_test[j-self.index] or self.collisions_test[i-self.index])):
                     radius_j = np.sqrt(blobs_infos[j,4] / np.pi)
                 
                     # Collision !
@@ -236,7 +236,7 @@ class Bot:
             
             size = blobs_infos[i,4]
             
-            if(size > self.df_size/8):
+            if(size > self.df_size):
                 
                 pos = pygame.math.Vector2(blobs_infos[i,0],blobs_infos[i,1])
                 radius = np.sqrt( size / np.pi )
@@ -256,7 +256,7 @@ class Bot:
             
             size = blobs_infos[i,4]
             
-            if(size > self.division_threshold/8): 
+            if(size > self.division_threshold): 
 
                 radius = np.sqrt( size / np.pi )
                 
@@ -270,49 +270,53 @@ class Bot:
                 blobs_infos[i,4] /= 2
                 blobs_infos[self.actual_sub_blob,4] = blobs_infos[i,4]
                 
-                #= Pairs Updates =#
-                self.splitArray[self.pairs] = np.array([i,self.actual_sub_blob,self.merge_time])
+                #= Collisions Updates =#
+                self.collisions_test[i-self.index] = True
+                self.collisions_test[self.actual_sub_blob] = True
+                
+                self.collisions_time[i-self.index] = self.merge_time 
+                self.collisions_time[self.actual_sub_blob] = self.merge_time 
                 
                 self.actual_sub_blob += 1
-                self.pairs += 1
                 
                 
     def join(self,blobs_infos):
+        '''
+        Deals with the merge time of sub_blobs, as well as when sub_blobs are re-joining after a split
+        '''
         
         if( self.actual_sub_blob > 1 ):
             
-            for i in range(self.pairs):
-                self.splitArray[i,2] -= 1
+            for i in range(self.actual_sub_blob):
                 
-                if( self.splitArray[i,2] == 0 ):
+                if(self.collisions_test[i]):
                     
-                    ind1 = self.splitArray[i,0]
-                    ind2 = self.splitArray[i,1]
+                    self.collisions_time[i] -= 1
+                    
+                    if( self.collisions_time[i] == 0 ):
+                        
+                        self.collisions_test[i] = False
+                        
+          
+        for i in range(self.index,self.index+self.actual_sub_blob-1):
+            radius_i = np.sqrt(blobs_infos[i,4] / np.pi)
+                
+            for j in range(i+1,self.index+self.actual_sub_blob):
+                radius_j = np.sqrt(blobs_infos[j,4] / np.pi)
+                
+                dist = np.linalg.norm( blobs_infos[i,0:2] - blobs_infos[j,0:2] )
+                
+                if( dist < max(radius_i,radius_j) ) :
                     
                     # Merge the two cells from the sub array
-                    blobs_infos[ind1,0:4] = (blobs_infos[ind1,0:4] + blobs_infos[ind2,0:4])/2
+                    blobs_infos[i,0:4] = (blobs_infos[i,0:4] + blobs_infos[j,0:4])/2
                     
-                    blobs_infos[ind1,4] += blobs_infos[ind2,4]
-                    
+                    blobs_infos[i,4] += blobs_infos[j,4]
                     
                     # Reorganize the array
-                    for j in range(ind2+1,self.actual_sub_blob):
-                        blobs_infos[j-1] = blobs_infos[j]
+                    for k in range(j+1,self.index+self.actual_sub_blob):
+                        blobs_infos[k-1] = blobs_infos[k]
                     
-                    
-                    # Update the indexes inside splitArray
-                    for j in range(self.pairs):
-                        
-                        if( j>=i and j+1<self.pairs ):
-                            self.splitArray[j] = self.splitArray[j+1]
-                        
-                        if(self.splitArray[j,0] > ind2):
-                            self.splitArray[j,0] -= 1
-                        
-                        if(self.splitArray[j,1] > ind2):
-                            self.splitArray[j,1] -= 1
-                        
-                    self.pairs -= 1
                     self.actual_sub_blob -= 1
         
         
@@ -355,3 +359,8 @@ class Bot:
         '''
         pass
         # self.closest_projectile_index = 
+        
+        
+    def respawn(self):
+        pass
+        

@@ -84,8 +84,31 @@ def compute_all_distances(blobList):
         
         distances[i,i] = 1e9
     
+    distances[len(blobList)-1,len(blobList)-1] = 1e9
+    
     return(distances)
 
+    
+def check_collisions(rules,blobs_list,blobs_infos):
+    
+    pass
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

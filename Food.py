@@ -35,7 +35,7 @@ class Food:
                     
                     if(np.linalg.norm(blobs_infos[blob.index + j,0:2] - self.food[i,0:2]) < radius ):
                         
-                        blobs_infos[j,4] += self.food[i,2] 
+                        blobs_infos[blob.index + j,4] += self.food[i,2] 
                         
                         self.food[i] = np.random.rand(3)
                         

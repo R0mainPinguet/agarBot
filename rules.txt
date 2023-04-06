@@ -29,6 +29,7 @@ division_threshold 1000
 viscosity 10000
 projectile_percentage 0.08
 merge_time 300
+eating_percentage 90
 
 # BOT #
-genomeSize 5
+genomeSize 8

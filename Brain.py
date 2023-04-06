@@ -21,7 +21,7 @@ class Brain:
         
         onlyValid = False
         
-        available_input_neurons = [0,1]
+        available_input_neurons = [0,1,2,3,6,7]
         available_internal_neurons = [[0,1,2],[3,4]] # 2 Layers with respectively 3 and 2 internal neurons
         available_output_neurons = [0,1,2,3,4]
         
@@ -36,7 +36,7 @@ class Brain:
                 self.genome.append( Gene( available_input_neurons , 
                                         available_internal_neurons , 
                                         available_output_neurons ) )
-        
+            
             #== Create the input neurons, internal neurons, output neurons ==#
             self.input_neurons = []
             self.internal_neurons= []
@@ -68,7 +68,14 @@ class Brain:
                 
                 # Input is from an input neuron
                 if(inputType == 0):
-                    neuron = self.input_neurons[ inputID ]
+                    
+                    found = False
+                    while(not found):                        
+                        for x in self.input_neurons:
+                            if(not found and (x.ID == inputID) ):
+                                neuron = x
+                                found = True
+                
                 
                 # Input is from an internal neuron
                 else:
@@ -77,7 +84,7 @@ class Brain:
                     input_layer = 0
                     while(not found):                        
                         for x in self.internal_neurons[input_layer]:
-                            if(x.ID == inputID):
+                            if(not found and (x.ID == inputID) ):
                                 neuron = x
                                 found = True
                         
@@ -92,23 +99,30 @@ class Brain:
                     input_layer = 0
                     while(not found):                        
                         for x in self.internal_neurons[input_layer]:
-                            if(x.ID == sinkID):
+                            if(not found and (x.ID == sinkID) ):
+                                found = True
                                 
                                 neuron.targets.append( ( weight , x ) )
                                 
                                 x.input_neurons_count += 1
                                 x.feeders.append(neuron)
                                 
-                                found = True
                         
                         input_layer += 1
                                 
                 # Output is to an output neuron
                 else:
-                    neuron.targets.append( ( weight , self.output_neurons[sinkID] ) )
                     
-                    self.output_neurons[sinkID].input_neurons_count += 1
-                    self.output_neurons[sinkID].feeders.append(neuron)
+                    found = False
+                    while(not found):                        
+                        for x in self.output_neurons:
+                            if(not found and (x.ID == sinkID)):
+                                found = True
+                                
+                                neuron.targets.append( ( weight , x ) )
+                                
+                                x.input_neurons_count += 1
+                                x.feeders.append(neuron)
             #===--===#
             
             
@@ -182,11 +196,12 @@ class Brain:
         correspondance = get_outputs_name_list()
          
         for neuron in self.input_neurons:
-            neuron.shoot(data)
+            neuron.compute_out(data)
+            neuron.shoot_targets()
         
         for i in range(len(self.internal_neurons)):
             for neuron in self.internal_neurons[i]:
-                neuron.shoot()
+                neuron.shoot_targets()
         
         output_dict = dict()
         for key in correspondance:

@@ -7,7 +7,7 @@ from Food import Food
 from Projectiles import Projectiles
 from Bot import Bot
 
-from utils import loadRules,compute_ranks,compute_all_distances
+from utils import loadRules,compute_ranks,compute_all_distances,check_collisions
 
 rules = loadRules("rules.txt")
 print("#== RULES ==#")
@@ -57,8 +57,12 @@ background = background.convert()
 clock = pygame.time.Clock()
 #====#
 
-#== Player, bots, food and projectiles initialization ==#
+#== External data ==#
 external_data = dict()
+external_data["longest_distance"] = np.sqrt(borders_X*borders_X+borders_Y*borders_Y)
+#====#
+
+#== Player, bots, food and projectiles initialization ==#
 
 # Holds the player and the bots attributes and functions
 blobs_list = []
@@ -78,6 +82,7 @@ food = Food(rules)
 projectiles = Projectiles(rules)
 #====#
 
+print("All bots are generated !")
 
 frame = 0
 
@@ -124,6 +129,7 @@ while running:
     external_data["frame"] = frame
     #==#
     
+    
     #= Updates =#
     projectiles.update(blobs_list,blobs_infos)
     
@@ -135,6 +141,8 @@ while running:
     food.update(blobs_list,blobs_infos)
     #====#
     
+    check_collisions(rules,blobs_list,blobs_infos)
+     
     #= Displays =#
     food.show(screen,width,height,cam.pos)
     projectiles.show(screen,width,height,cam.pos)

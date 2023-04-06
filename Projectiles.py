@@ -67,7 +67,7 @@ class Projectiles:
                     
                     if(np.linalg.norm(blobs_infos[blob.index+k,0:2] - self.projectiles[i,0:2]) < radius):
                         
-                        blobs_infos[k,4] += self.projectiles[i,4]
+                        blobs_infos[blob.index+k,4] += self.projectiles[i,4]
         
                         for j in range(i+1,self.actual_projectiles_count):
                             self.projectiles[j-1] = self.projectiles[j]
