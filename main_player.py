@@ -80,6 +80,8 @@ for i in range(bots_count):
     
 food = Food(rules)
 projectiles = Projectiles(rules)
+
+eating_percentage = rules["eating_percentage"]
 #====#
 
 print("All bots are generated !")
@@ -141,7 +143,7 @@ while running:
     food.update(blobs_list,blobs_infos)
     #====#
     
-    check_collisions(rules,blobs_list,blobs_infos)
+    check_collisions(rules,blobs_list,blobs_infos,eating_percentage)
      
     #= Displays =#
     food.show(screen,width,height,cam.pos)

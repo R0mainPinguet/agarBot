@@ -340,11 +340,10 @@ class Bot:
         '''
         Compute the size, center of gravity
         '''
-        
+
         self.global_size = np.sum(blobs_infos[self.index:self.index+self.actual_sub_blob,4])
         self.center_of_gravity = np.average(blobs_infos[self.index:self.index+self.actual_sub_blob,0:2] , axis=0)
         
-    
     def compute_closest_food(self,food):
         '''
         Compute the closest food index
@@ -361,6 +360,26 @@ class Bot:
         # self.closest_projectile_index = 
         
         
-    def respawn(self):
-        pass
+    def respawn(self,blobs_infos,rules):
+        
+        self.actual_sub_blob = 1
+
+        bx , by = rules["borders_X"] , rules["borders_Y"]
+        
+        self.collisions_test = np.zeros(self.MAX_SUB_BLOB,dtype="bool")
+        self.collisions_time = np.zeros(self.MAX_SUB_BLOB,dtype="float")
+        
+        #================================#
+        #= Column 0 1 : Position Vector =#
+        #=  Column 2 3 : Speed Vector   =#
+        #=         Column 4 : Size      =#
+        angle = 2*np.pi*self.ID/rules["bots_count"]
+        blobs_infos[self.index,0:2] = [bx/2 + bx*np.cos(angle)/4 , by/2 + by*np.sin(angle)/4]
+        blobs_infos[self.index,2:4] = [0,0]
+        blobs_infos[self.index,4] = self.df_size
+        #================================#
+        
+        self.compute_personal_data(blobs_infos)
+
+       
         

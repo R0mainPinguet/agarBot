@@ -89,9 +89,71 @@ def compute_all_distances(blobList):
     return(distances)
 
     
-def check_collisions(rules,blobs_list,blobs_infos):
+def check_collisions(rules,blobs_list,blobs_infos,eating_percentage):
     
-    pass
+    for i in range(len(blobs_list)):
+        
+        blob_i = blobs_list[i]
+        
+        for j in range(len(blobs_list)):
+            
+            if(i!=j):
+                
+                blob_j = blobs_list[j]
+                
+                for ii in range(blob_i.actual_sub_blob-1,-1,-1):
+                    
+                    for jj in range(blob_j.actual_sub_blob-1,-1,-1):
+                        
+                        size_ii = blobs_infos[blob_i.index+ii,4] 
+                        size_jj = blobs_infos[blob_j.index+jj,4] 
+                        
+                        radius_ii = np.sqrt(size_ii / np.pi)
+                        radius_jj = np.sqrt(size_jj / np.pi)
+                        
+                        dist = np.linalg.norm(blobs_infos[blob_i.index+ii,0:2]-blobs_infos[blob_j.index+jj,0:2])
+                        
+                        
+                        if(dist < radius_ii and size_ii * eating_percentage > size_jj):
+                            
+                            blobs_infos[blob_i.index+ii,4] += size_jj
+                            
+                            for k in range(jj+1,blob_j.actual_sub_blob):
+                                
+                                blobs_infos[blob_j.index+k-1] = blobs_infos[blob_j.index+k] 
+                                blob_j.collisions_test[k-1] = blob_j.collisions_test[k]
+                                blob_j.collisions_time[k-1] = blob_j.collisions_time[k]
+                            
+                            blob_j.actual_sub_blob -= 1
+                            
+                            if(blob_j.actual_sub_blob==0):
+                                blob_j.respawn(blobs_infos,rules)
+                            
+                        elif(dist < radius_jj and size_jj * eating_percentage > size_ii):
+                            
+                            blobs_infos[blob_j.index+jj,4] += size_ii
+                            
+                            for k in range(ii+1,blob_i.actual_sub_blob):
+                                
+                                blobs_infos[blob_i.index+k-1] = blobs_infos[blob_i.index+k] 
+                                blob_i.collisions_test[k-1] = blob_i.collisions_test[k]
+                                blob_i.collisions_time[k-1] = blob_i.collisions_time[k]
+                                
+                            
+                            blob_i.actual_sub_blob -= 1
+                            
+                            if(blob_i.actual_sub_blob==0):
+                                blob_i.respawn(blobs_infos,rules)
+                            
+                            
+                            
+                
+                
+            
+            
+            
+            
+            
     
     
     
