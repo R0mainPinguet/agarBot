@@ -64,10 +64,10 @@ external_data["longest_distance"] = np.sqrt(borders_X*borders_X+borders_Y*border
 
 #== Player, bots, food and projectiles initialization ==#
 
-# Holds the player and the bots attributes and functions
+# Contains the player and bots objects
 blobs_list = []
 
-# Holds the player and the bots position, speed, and size
+# Contains the player and the bots position, speed, and size
 blobs_infos = np.ones((rules["MAX_SUB_BLOB"] * (player_count+bots_count) , 5) , dtype="float")
 
 player = Player(rules,blobs_infos)
@@ -130,7 +130,6 @@ while running:
     external_data["distances"] = compute_all_distances(blobs_list)
     external_data["frame"] = frame
     #==#
-    
     
     #= Updates =#
     projectiles.update(blobs_list,blobs_infos)

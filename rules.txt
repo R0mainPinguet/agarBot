@@ -1,12 +1,12 @@
 # GENERAL #
 player_count 1
-bots_count 1
+bots_count 3
+game_length 7200
 
 # WINDOW #
 FPS 60
 width 800
 height 800
-MAX_TIME 18000
 
 # MAP #
 borders_X 800
@@ -33,3 +33,9 @@ eating_percentage 90
 
 # BOT #
 genomeSize 8
+
+# LEARNING #
+generations 1
+mutation_prob 0.1
+crossover_prob 0.9
+elitism 1

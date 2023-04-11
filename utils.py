@@ -127,7 +127,7 @@ def check_collisions(rules,blobs_list,blobs_infos,eating_percentage):
                             blob_j.actual_sub_blob -= 1
                             
                             if(blob_j.actual_sub_blob==0):
-                                blob_j.respawn(blobs_infos,rules)
+                                blob_j.respawn(blobs_list,blobs_infos,rules)
                             
                         elif(dist < radius_jj and size_jj * eating_percentage > size_ii):
                             
@@ -143,7 +143,7 @@ def check_collisions(rules,blobs_list,blobs_infos,eating_percentage):
                             blob_i.actual_sub_blob -= 1
                             
                             if(blob_i.actual_sub_blob==0):
-                                blob_i.respawn(blobs_infos,rules)
+                                blob_i.respawn(blobs_list,blobs_infos,rules)
                             
                             
                             

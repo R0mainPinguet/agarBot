@@ -223,10 +223,10 @@ class Player:
                     pygame.draw.circle(screen, GREY , screen_pos , radius )
     
     
-    def respawn(self,blobs_infos,rules):
+    def respawn(self,blobs_list,blobs_infos,rules):
         
         self.actual_sub_blob = 1
-
+        
         bx , by = rules["borders_X"] , rules["borders_Y"]
         
         self.collisions_test = np.zeros(self.MAX_SUB_BLOB,dtype="bool")
@@ -236,7 +236,26 @@ class Player:
         #= Column 0 1 : Position Vector =#
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
-        blobs_infos[0,0:2] = [bx/2,by/2]
+        collides = True
+        
+        while(collides):
+            
+            collides = False
+            
+            pos = np.array([np.random.randint(0,bx),np.random.randint(0,by)],dtype="float")
+            
+            i = 0
+            while(i < len(blobs_list) and not collides):
+                
+                for j in range(blobs_list[i].actual_sub_blob):
+                    radius = np.sqrt(blobs_infos[blobs_list[i].index+j,4] / np.pi) 
+                
+                    if( np.linalg.norm(pos - blobs_infos[blobs_list[i].index+j,0:2]) < radius ):
+                        collides = True
+                
+                i += 1
+        
+        blobs_infos[0,0:2] = pos
         blobs_infos[0,2:4] = [0,0]
         blobs_infos[0,4] = self.df_size
         #================================#

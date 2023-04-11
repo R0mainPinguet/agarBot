@@ -34,8 +34,10 @@ class Bot:
         
         #= Default speed and size =#
         self.df_speed = rules["df_speed"]
+        
         self.df_size = rules["df_size"]
         self.global_size = self.df_size
+        self.fitness = self.df_size
         
         #=  Number of frames before merging two sub cells =#
         #= For example, 600 frames = 10 seconds at 60 fps =#
@@ -95,9 +97,9 @@ class Bot:
     
     
     def update(self,blobs_list,blobs_infos,external_data,food,projectiles):
-                
-        self.compute_personal_data(blobs_infos)
         
+        self.compute_personal_data(blobs_infos)
+     
         self.observe(blobs_list,blobs_infos,external_data)
         
         self.think()
@@ -106,7 +108,7 @@ class Bot:
         
         self.deflate(blobs_infos)
         self.join(blobs_infos)
-        
+
     
     
     def observe(self,blobs_list,blobs_infos,external_data):
@@ -344,6 +346,13 @@ class Bot:
         self.global_size = np.sum(blobs_infos[self.index:self.index+self.actual_sub_blob,4])
         self.center_of_gravity = np.average(blobs_infos[self.index:self.index+self.actual_sub_blob,0:2] , axis=0)
         
+        #= The fitness at the end is the max size of the blob =#
+        if(self.global_size > self.fitness):
+            self.fitness = self.global_size
+        
+        
+        
+        
     def compute_closest_food(self,food):
         '''
         Compute the closest food index
@@ -360,7 +369,7 @@ class Bot:
         # self.closest_projectile_index = 
         
         
-    def respawn(self,blobs_infos,rules):
+    def respawn(self,blobs_list,blobs_infos,rules):
         
         self.actual_sub_blob = 1
 
@@ -373,8 +382,26 @@ class Bot:
         #= Column 0 1 : Position Vector =#
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
-        angle = 2*np.pi*self.ID/rules["bots_count"]
-        blobs_infos[self.index,0:2] = [bx/2 + bx*np.cos(angle)/4 , by/2 + by*np.sin(angle)/4]
+        collides = True
+        
+        while(collides):
+            
+            collides = False
+            
+            pos = np.array([np.random.randint(0,bx),np.random.randint(0,by)],dtype="float")
+            
+            i = 0
+            while(i < len(blobs_list) and not collides):
+                
+                for j in range(blobs_list[i].actual_sub_blob):
+                    radius = np.sqrt(blobs_infos[blobs_list[i].index+j,4] / np.pi) 
+                
+                    if( np.linalg.norm(pos - blobs_infos[blobs_list[i].index+j,0:2]) < radius ):
+                        collides = True
+                
+                i += 1
+        
+        blobs_infos[self.index,0:2] = pos
         blobs_infos[self.index,2:4] = [0,0]
         blobs_infos[self.index,4] = self.df_size
         #================================#

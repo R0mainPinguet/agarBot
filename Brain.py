@@ -33,9 +33,23 @@ class Brain:
             
             self.genome = []
             for i in range(genome_size):
-                self.genome.append( Gene( available_input_neurons , 
-                                        available_internal_neurons , 
-                                        available_output_neurons ) )
+                
+                alreadyInside = True
+                
+                #= We don't want to create multiple connections between the same neurons =#
+                while(alreadyInside):
+                    
+                    newGene = Gene( available_input_neurons , 
+                                    available_internal_neurons , 
+                                    available_output_neurons )
+                    
+                    alreadyInside = False
+                    
+                    for i in range(len(self.genome)):
+                        if( (self.genome[i].sequence[0:16] == newGene.sequence[0:16]).all() ):
+                            alreadyInside = True
+                    
+                self.genome.append( newGene )
             
             #== Create the input neurons, internal neurons, output neurons ==#
             self.input_neurons = []
