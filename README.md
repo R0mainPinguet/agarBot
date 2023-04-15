@@ -12,7 +12,7 @@ Features :
 
 	- Play with the ( stupid ) bots ( Fun )
 	
-	- Train bots ( Not Done )
+	- Train bots ( in progress )
 	
 	- Play with ( smart ) bots ( Not Done )
 
