@@ -29,8 +29,8 @@ class Bot:
         # The index inside blobs_list
         self.ID = index // rules["MAX_SUB_BLOB"]
         
-        bx , by = rules["borders_X"] , rules["borders_Y"]
-        self.borders = pygame.math.Vector2(bx,by)
+        self.bx , self.by = rules["borders_X"] , rules["borders_Y"]
+        self.borders = pygame.math.Vector2(self.bx,self.by)
         
         #= Default speed and size =#
         self.df_speed = rules["df_speed"]
@@ -62,7 +62,7 @@ class Bot:
         #=  Column 2 3 : Speed Vector   =#
         #=         Column 4 : Size      =#
         angle = 2*np.pi*self.ID/rules["bots_count"]
-        blobs_infos[self.index,0:2] = [bx/2 + bx*np.cos(angle)/4 , by/2 + by*np.sin(angle)/4]
+        blobs_infos[self.index,0:2] = [self.bx/2 + self.bx*np.cos(angle)/4 , self.by/2 + self.by*np.sin(angle)/4]
         blobs_infos[self.index,2:4] = [0,0]
         blobs_infos[self.index,4] = self.df_size
         #================================#
@@ -70,8 +70,7 @@ class Bot:
         self.compute_personal_data(blobs_infos)
         
         #= Brain part =#
-        self.genomeSize = rules["genomeSize"]
-        self.brain = Brain(self.genomeSize)
+        self.brain = Brain(rules,self.ID)
         
         # print("#== BRAIN ==#")
         # print(self.brain)
@@ -79,8 +78,9 @@ class Bot:
         
         #= Dictionary of possible inputs =#
         self.informations = dict()
-
-        
+    
+    
+    
     # Bot AI Decomposition :
     #
     #= 1 - See
@@ -408,5 +408,33 @@ class Bot:
         
         self.compute_personal_data(blobs_infos)
 
-       
+    def reset(self , rules , index , blobs_infos):
+        
+        self.actual_sub_blob = 1
+                
+        self.global_size = self.df_size
+        self.fitness = self.df_size
+        
+        self.collisions_test = np.zeros(self.MAX_SUB_BLOB,dtype="bool")
+        self.collisions_time = np.zeros(self.MAX_SUB_BLOB,dtype="float")
+        
+        #============================#
+        #= Column 0 1 : Position Vector =#
+        #=  Column 2 3 : Speed Vector   =#
+        #=         Column 4 : Size      =#
+        angle = 2*np.pi*self.ID/rules["bots_count"]
+        blobs_infos[self.index,0:2] = [self.bx/2 + self.bx*np.cos(angle)/4 , self.by/2 + self.by*np.sin(angle)/4]
+        blobs_infos[self.index,2:4] = [0,0]
+        blobs_infos[self.index,4] = self.df_size
+        #================================#
+        
+        self.compute_personal_data(blobs_infos)
+        
+        #= Dictionary of possible inputs =#
+        self.informations = dict()
+        
+        self.brain.reset(rules,self.ID)
+    
+        
+        
         

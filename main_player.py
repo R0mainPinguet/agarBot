@@ -136,7 +136,7 @@ while running:
     
     player.update(target_pos,blobs_infos)
     
-    for i in range(player_count,player_count+bots_count):
+    for i in range(player_count,player_count+bots_count ):
         blobs_list[i].update(blobs_list,blobs_infos,external_data,food,projectiles)
         
     food.update(blobs_list,blobs_infos)
@@ -148,7 +148,7 @@ while running:
     food.show(screen,width,height,cam.pos)
     projectiles.show(screen,width,height,cam.pos)
     
-    for i in range(player_count+bots_count):
+    for i in range(player_count+bots_count ):
         blobs_list[i].show(screen,width,height,cam.pos,blobs_infos)
        
     cam.update(player,blobs_infos)

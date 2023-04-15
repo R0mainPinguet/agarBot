@@ -1,7 +1,7 @@
 # GENERAL #
 player_count 1
-bots_count 3
-game_length 7200
+bots_count 4
+game_length 1800
 
 # WINDOW #
 FPS 60
@@ -32,10 +32,11 @@ merge_time 300
 eating_percentage 90
 
 # BOT #
-genomeSize 8
+genomeSize 1
 
 # LEARNING #
-generations 1
+generations 2
+crossover_prob 0.5
 mutation_prob 0.1
-crossover_prob 0.9
 elitism 1
+bots_for_elitism 2

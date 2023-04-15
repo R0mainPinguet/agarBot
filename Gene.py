@@ -6,9 +6,13 @@ from utils import arr2int,int2weight,int2array
 
 class Gene:
     
-    def __init__(self,available_input_neurons,available_internal_neurons,available_output_neurons):
+    def __init__(self,rules):
         
         self.sequence = np.random.randint(0,2,32)
+        
+        available_input_neurons = rules["available_input_neurons"]
+        available_internal_neurons = rules["available_internal_neurons"]
+        available_output_neurons = rules["available_output_neurons"]
         
         temp_list = []
         for x in available_internal_neurons:
@@ -21,22 +25,19 @@ class Gene:
         if(rd.random() < ratio1):
             self.sequence[0] = 0
             choice = rd.choice( available_input_neurons )
-            
-            # Proportion of internal neurons among internal + output neurons
-            ratio2 = len(temp_list)/(len(temp_list)+len(available_output_neurons))
-            
+
         else:
             
             self.sequence[0] = 1
             choiceLayer_Input = rd.randint(0,len(available_internal_neurons)-1)
             choice = rd.choice( available_internal_neurons[choiceLayer_Input] )
             
-            temp_list2 = []
+            temp_list = []
             for i in range(choiceLayer_Input+1,len(available_internal_neurons)):
-                temp_list2 += available_internal_neurons[i]
+                temp_list += available_internal_neurons[i]
                 
-            # Proportion of remaining internal neurons among remaining internal + output neurons
-            ratio2 = len(temp_list2)/(len(temp_list2)+len(available_output_neurons))
+        # Proportion of remaining internal neurons among remaining internal + output neurons
+        ratio2 = len(temp_list)/(len(temp_list)+len(available_output_neurons))
         
         self.sequence[1:8] = int2array(choice,7)
         

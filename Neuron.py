@@ -55,8 +55,6 @@ class Neuron:
                     print("    Internal neuron ( ID = " + str(neuron.ID) + " ) weight = " + str(weight))
                 elif(neuron.type==2):
                     print("    Output neuron ( ID = " + str(neuron.ID) + " ) weight = " + str(weight))
-                else:
-                    print("    Wtf ?") # Not supposed to happen 
                         
         return("")
     

@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import random as rd
 
 from Player import Player
 from Camera import Camera
@@ -9,21 +10,31 @@ from Bot import Bot
 
 from utils import loadRules,compute_ranks,compute_all_distances,check_collisions
 
+from EA import Select,Crossover,Mutate
+
+
+logList = []
+
+
 rules = loadRules("rules.txt")
+
+#== AVAILABLE INPUT, INTERNAL AND OUTPUT NEURONS ==#
+rules["available_input_neurons"] = [0,1,2,3,6,7]
+rules["available_internal_neurons"] = [[0,1,2],[3,4]]
+rules["available_output_neurons"] = [0,1,2,3,4]
+        
 print("#== RULES ==#")
 print(rules)
 print("#====#")
 
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-
+#===#
 bots_count = rules["bots_count"]
 #===#
 
 #== Window parameters ==#
 game_length = rules["game_length"]
 
-print("Durée de la partie : " + str(game_length // 3600) + " minutes ")
+print("Durée de la partie : " + str(game_length // 3600) + " minutes et " + str( (game_length%3600)//60 ) + " secondes")
 
 width , height = rules["width"] , rules["height"]
 
@@ -32,9 +43,6 @@ borders_X , borders_Y = rules["borders_X"] , rules["borders_Y"]
 
 #== Learning parameters ==#
 generations = rules["generations"]
-mutation_prob = rules["mutation_prob"]
-crossover_prob = rules["crossover_prob"]
-elitism = rules["elitism"]
 #=====#
 
 
@@ -61,8 +69,9 @@ food = Food(rules)
 projectiles = Projectiles(rules)
 #====#
 
-
 for generation in range(generations):
+    
+    print("Génération " + str(generation+1) )
     
     frame = 0
     
@@ -90,36 +99,46 @@ for generation in range(generations):
         
         frame += 1
     
+    
     #= Bubble sort ( too lazy for something else ) First ones are the best ones =#
     for i in range(len(blobs_list)-1):
-        for j in range(i,len(blobs_list)-1):
-            
+        for j in range(len(blobs_list)-2,i-1,-1):
             if(blobs_list[j].fitness < blobs_list[j+1].fitness):
                 
                 tmp = blobs_list[j]
-                blobs_list[j] = blobs_list[i]
-                blobs_list[i] = tmp
-            
-    for i in range(len(blobs_list)):
-        print("Fitness de l'individu " + str(i) + " : " + str(blobs_list[i].fitness) )
+                blobs_list[j] = blobs_list[j+1]
+                blobs_list[j+1] = tmp
     
+    for bot in blobs_list:
+        bot.brain.plot( int(bot.fitness), rules , "logs/G" + str(generation) + "_" + str(bot.ID) + ".png")
+        print("Fitness de l'individu " + str(bot.ID) + " : " + str(bot.fitness) )
     
-    #= Roulette Selection with elitism =#
+    if( generation != generations-1):
     
+        #== EVOLUTIONARY ALGORITHM ==#
+        new_blobs_list = []
+        
+        #== Selection ==#
+        blobs_to_crossover = Select(blobs_list,new_blobs_list,rules,logList)
+        #====#
+        
+        #== Crossover ==#
+        Crossover( blobs_to_crossover , blobs_list , new_blobs_list , rules , logList )
+        #====#
+        
+        #== Mutation ==#
+        Mutate(new_blobs_list , rules , logList )
+        #====#
+        
+        blobs_list = new_blobs_list
+        
+        for i in range(bots_count):
+            blobs_list[i].reset(rules,i*rules["MAX_SUB_BLOB"],blobs_infos)
     
-    
-    #====#
-    
-    #= Mutation Operator =#
-    
-    
-    
-    #====#
-    
-    
-    
-    
-    
-    
+logTxt = ''.join(logList)
+
+f = open("logs/log.txt", "w")
+f.write(logTxt)
+f.close()
 
     
