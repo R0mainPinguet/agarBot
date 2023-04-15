@@ -10,7 +10,7 @@ Features :
 
 	- Play alone on the map ( Done ) ( Boring )
 
-	- Play with the ( stupid ) bots ( Fun )
+	- Play with the ( stupid ) bots ( Done ) ( Fun )
 	
 	- Train bots ( in progress )
 	
