@@ -70,7 +70,7 @@ class Bot:
         self.compute_personal_data(blobs_infos)
         
         #= Brain part =#
-        self.brain = Brain(rules,self.ID)
+        self.brain = Brain(rules)
         
         # print("#== BRAIN ==#")
         # print(self.brain)
@@ -158,16 +158,21 @@ class Bot:
         
         closest_ennemy = np.argmin(external_data["distances"][self.ID])
         
+        closest_food = self.compute_closest_food(food)
+        
+        closest_projectile = self.compute_closest_projectile(projectiles)
+        
         #== Moving ==#
         normal_mov = np.array([self.brainOutput["Horizontal"],self.brainOutput["Vertical"]])
         
-        ennemy_mov = self.brainOutput["Move_Closest_Ennemy"] * blob_list[closest_ennemy].center_of_gravity
+        ennemy_mov = self.brainOutput["Move_Closest_Ennemy"] * (blob_list[closest_ennemy].center_of_gravity-self.center_of_gravity)
         
-        # food_mov = self.brainOutput["Move_Closest_Food"] * np.array([])    
-        food_mov = np.zeros(2)    
+        food_mov = self.brainOutput["Move_Closest_Food"] * (food.food[closest_food,0:2]-self.center_of_gravity)
         
-        # projectile_mov = self.brainOutput["Move_Closest_Projectile"] * np.array([])
-        projectile_mov = np.zeros(2)
+        if(closest_projectile == -1):
+            projectile_mov = np.zeros(2)
+        else:
+            projectile_mov = self.brainOutput["Move_Closest_Projectile"] * (projectiles.projectiles[closest_projectile,0:2]-self.center_of_gravity)
         
         global_mov = normal_mov + ennemy_mov + food_mov + projectile_mov
         if(np.linalg.norm(global_mov) != 0):
@@ -357,16 +362,31 @@ class Bot:
         '''
         Compute the closest food index
         '''        
-        pass
-        # self.closest_food_index = 
-    
+        closest_food_index = 0
+        closest_food_distance = 1e9
+        
+        for i in range(food.MAX_FOOD):
+            dist = np.linalg.norm(self.center_of_gravity - food.food[i,0:2])
+            if( dist < closest_food_distance):
+                closest_food_index = i
+                closest_food_distance = dist
+        
+        return(closest_food_index)
         
     def compute_closest_projectile(self,projectiles):
         '''
         Compute the closest projectile index
         '''
-        pass
-        # self.closest_projectile_index = 
+        closest_proj_index = -1
+        closest_proj_distance = 1e9
+        
+        for i in range(projectiles.actual_projectiles_count):
+            dist = np.linalg.norm(self.center_of_gravity - projectiles.projectiles[i,0:2])
+            if( dist < closest_proj_distance):
+                closest_proj_index = i
+                closest_proj_distance = dist
+        
+        return(closest_proj_index)
         
         
     def respawn(self,blobs_list,blobs_infos,rules):
@@ -408,7 +428,7 @@ class Bot:
         
         self.compute_personal_data(blobs_infos)
 
-    def reset(self , rules , index , blobs_infos):
+    def reset(self , rules , blobs_infos):
         
         self.actual_sub_blob = 1
                 
@@ -433,7 +453,7 @@ class Bot:
         #= Dictionary of possible inputs =#
         self.informations = dict()
         
-        self.brain.reset(rules,self.ID)
+        self.brain.reset(rules)
     
         
         

@@ -19,7 +19,6 @@ class Brain:
         This is to optimize during runtime, as we don't have to use these neurons.
         '''
         
-        onlyValid = True
         
         genome_size = rules["genomeSize"]
         
@@ -27,129 +26,143 @@ class Brain:
         available_internal_neurons = rules["available_internal_neurons"]
         available_output_neurons = rules["available_output_neurons"]
         
-        valid = False
+
         
-        while(not valid):
+        self.genome = []
+        for i in range(genome_size):
             
-            valid = True
+            alreadyInside = True
             
-            self.genome = []
-            for i in range(genome_size):
+            #= We don't want to create multiple connections between the same neurons =#
+            while(alreadyInside):
                 
-                alreadyInside = True
+                newGene = Gene( rules )
                 
-                #= We don't want to create multiple connections between the same neurons =#
-                while(alreadyInside):
+                alreadyInside = False
+                
+                for i in range(len(self.genome)):
+                    if( (self.genome[i].sequence[0:16] == newGene.sequence[0:16]).all() ):
+                        alreadyInside = True
+                
+            self.genome.append( newGene )
+        
+        #== Create the input neurons, internal neurons, output neurons ==#
+        self.input_neurons = []
+        self.internal_neurons= []
+        self.output_neurons = []
+        
+        for id in available_input_neurons:
+            self.input_neurons.append( get_input_neuron(id) )
+        
+        for i in range(len(available_internal_neurons)):
+            self.internal_neurons.append([])
+            for id in available_internal_neurons[i]:
+                self.internal_neurons[-1].append( Internal_Neuron(1,id) )
+        
+        for id in available_output_neurons:
+            self.output_neurons.append( get_output_neuron(id) )
+        #======#
+        
+        
+        #==- Make connexions between neurons -==#
+        for gene in self.genome :
+            
+            inputType = gene.sequence[0]
+            inputID = arr2int(gene.sequence[1:8])
+            
+            sinkType = gene.sequence[8]
+            sinkID = arr2int(gene.sequence[9:16])
+            
+            weight = int2weight(arr2int(gene.sequence[16:32]))
+            
+            # Input is from an input neuron
+            if(inputType == 0):
+                
+                found = False
+                while(not found):                        
+                    for x in self.input_neurons:
+                        if(not found and (x.ID == inputID) ):
+                            neuron = x
+                            found = True
+            
+            
+            # Input is from an internal neuron
+            else:
+                
+                found = False
+                input_layer = 0
+                while(not found):                        
+                    for x in self.internal_neurons[input_layer]:
+                        if(not found and (x.ID == inputID) ):
+                            neuron = x
+                            found = True
                     
-                    newGene = Gene( rules )
+                    input_layer += 1
+                                    
+            neuron.output_neurons_count += 1
+            
+            # Output is to an internal neuron
+            if(sinkType == 0):
+                
+                found = False
+                input_layer = 0
+                while(not found):                        
+                    for x in self.internal_neurons[input_layer]:
+                        if(not found and (x.ID == sinkID) ):
+                            found = True
+                            
+                            neuron.targets.append( ( weight , x ) )
+                            
+                            x.input_neurons_count += 1
+                            x.feeders.append(neuron)
+                            
                     
-                    alreadyInside = False
+                    input_layer += 1
+                            
+            # Output is to an output neuron
+            else:
+                
+                found = False
+                while(not found):                        
+                    for x in self.output_neurons:
+                        if(not found and (x.ID == sinkID)):
+                            found = True
+                            
+                            neuron.targets.append( ( weight , x ) )
+                            
+                            x.input_neurons_count += 1
+                            x.feeders.append(neuron)
+        
+        #===- End of making connexions between neurons-===#
+        
+        
+        #==- Remove the lonely neurons :( -==#
+        found_lonely = True
+        
+        while( found_lonely ):
+            
+            found_lonely = False
+            
+            for i in range(len(self.input_neurons)-1,-1,-1):
+                neuron = self.input_neurons[i]
+                if(neuron.output_neurons_count == 0):
+                    found_lonely = True
                     
-                    for i in range(len(self.genome)):
-                        if( (self.genome[i].sequence[0:16] == newGene.sequence[0:16]).all() ):
-                            alreadyInside = True
-                    
-                self.genome.append( newGene )
-            
-            #== Create the input neurons, internal neurons, output neurons ==#
-            self.input_neurons = []
-            self.internal_neurons= []
-            self.output_neurons = []
-            
-            for id in available_input_neurons:
-                self.input_neurons.append( get_input_neuron(id) )
-            
-            for i in range(len(available_internal_neurons)):
-                self.internal_neurons.append([])
-                for id in available_internal_neurons[i]:
-                    self.internal_neurons[-1].append( Internal_Neuron(1,id) )
-            
-            for id in available_output_neurons:
-                self.output_neurons.append( get_output_neuron(id) )
-            #======#
-            
-            
-            #==- Make connexions between neurons -==#
-            for gene in self.genome :
-                
-                inputType = gene.sequence[0]
-                inputID = arr2int(gene.sequence[1:8])
-                
-                sinkType = gene.sequence[8]
-                sinkID = arr2int(gene.sequence[9:16])
-                
-                weight = int2weight(arr2int(gene.sequence[16:32]))
-                
-                # Input is from an input neuron
-                if(inputType == 0):
-                    
-                    found = False
-                    while(not found):                        
-                        for x in self.input_neurons:
-                            if(not found and (x.ID == inputID) ):
-                                neuron = x
-                                found = True
-                
-                
-                # Input is from an internal neuron
-                else:
-                    
-                    found = False
-                    input_layer = 0
-                    while(not found):                        
-                        for x in self.internal_neurons[input_layer]:
-                            if(not found and (x.ID == inputID) ):
-                                neuron = x
-                                found = True
+                    # Remove the input from neurons forward
+                    for target in neuron.targets:
+                        weight,neuron2 = target
                         
-                        input_layer += 1
-                                        
-                neuron.output_neurons_count += 1
-                
-                # Output is to an internal neuron
-                if(sinkType == 0):
-                    
-                    found = False
-                    input_layer = 0
-                    while(not found):                        
-                        for x in self.internal_neurons[input_layer]:
-                            if(not found and (x.ID == sinkID) ):
-                                found = True
-                                
-                                neuron.targets.append( ( weight , x ) )
-                                
-                                x.input_neurons_count += 1
-                                x.feeders.append(neuron)
-                                
+                        neuron2.input_neurons_count -= 1
+                        neuron2.feeders.remove(neuron)
                         
-                        input_layer += 1
-                                
-                # Output is to an output neuron
-                else:
-                    
-                    found = False
-                    while(not found):                        
-                        for x in self.output_neurons:
-                            if(not found and (x.ID == sinkID)):
-                                found = True
-                                
-                                neuron.targets.append( ( weight , x ) )
-                                
-                                x.input_neurons_count += 1
-                                x.feeders.append(neuron)
-            #===--===#
+                    self.input_neurons.pop(i)
             
             
-            #==- Remove the lonely neurons :( -==#
-            found_lonely = True
-            
-            while( found_lonely ):
-                
-                found_lonely = False
-                
-                for i in range(len(self.input_neurons)-1,-1,-1):
-                    neuron = self.input_neurons[i]
-                    if(neuron.output_neurons_count == 0):
+            for i in range(len(self.internal_neurons)):
+                neuron_layer = self.internal_neurons[i]
+                for j in range(len(self.internal_neurons[i])-1,-1,-1):
+                    neuron = self.internal_neurons[i][j]
+                    if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
                         found_lonely = True
                         
                         # Remove the input from neurons forward
@@ -158,53 +171,34 @@ class Brain:
                             
                             neuron2.input_neurons_count -= 1
                             neuron2.feeders.remove(neuron)
-                            
-                        self.input_neurons.pop(i)
-                
-                
-                for i in range(len(self.internal_neurons)):
-                    neuron_layer = self.internal_neurons[i]
-                    for j in range(len(self.internal_neurons[i])-1,-1,-1):
-                        neuron = self.internal_neurons[i][j]
-                        if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
-                            found_lonely = True
-                            
-                            # Remove the input from neurons forward
-                            for target in neuron.targets:
-                                weight,neuron2 = target
-                                
-                                neuron2.input_neurons_count -= 1
-                                neuron2.feeders.remove(neuron)
-                            
-                            # Remove the target from neurons backward
-                            for feeder in neuron.feeders:
-                                feeder.output_neuron_count -= 1
-                                
-                                for k in range(len(feeder.targets)-1,-1,-1):
-                                    if(feeder.targets[k][1] == neuron):
-                                        feeder.targets.pop(k)
-                                    
-                            self.internal_neurons[i].pop(j)
-                        
-                for i in range(len(self.output_neurons)-1,-1,-1):
-                    neuron = self.output_neurons[i]
-                    if(neuron.input_neurons_count == 0):
-                        found_lonely = True
                         
                         # Remove the target from neurons backward
                         for feeder in neuron.feeders:
                             feeder.output_neuron_count -= 1
                             
-                            for j in range(len(feeder.targets)-1,-1,-1):
-                                if(feeder.targets[j][1] == neuron):
-                                    feeder.targets.pop(j)
+                            for k in range(len(feeder.targets)-1,-1,-1):
+                                if(feeder.targets[k][1] == neuron):
+                                    feeder.targets.pop(k)
+                                
+                        self.internal_neurons[i].pop(j)
+                    
+            for i in range(len(self.output_neurons)-1,-1,-1):
+                neuron = self.output_neurons[i]
+                if(neuron.input_neurons_count == 0):
+                    found_lonely = True
+                    
+                    # Remove the target from neurons backward
+                    for feeder in neuron.feeders:
+                        feeder.output_neuron_count -= 1
                         
-                        self.output_neurons.pop(i)
-            #===--===#
+                        for j in range(len(feeder.targets)-1,-1,-1):
+                            if(feeder.targets[j][1] == neuron):
+                                feeder.targets.pop(j)
+                    
+                    self.output_neurons.pop(i)
         
-            if(onlyValid and (len(self.input_neurons)==0 or len(self.output_neurons)==0)):
-                valid = False
-        
+        #===- End of removing the lonely neurons -===#
+    
         
     
     def shoot(self,data):
@@ -386,7 +380,6 @@ class Brain:
         This is to optimize during runtime, as we don't have to use these neurons.
         '''
         
-        onlyValid = True
         
         genome_size = rules["genomeSize"]
         
@@ -394,111 +387,124 @@ class Brain:
         available_internal_neurons = rules["available_internal_neurons"]
         available_output_neurons = rules["available_output_neurons"]
         
-        valid = False
         
-        while(not valid):
-            
-            valid = True
+        #== Create the input neurons, internal neurons, output neurons ==#
+        self.input_neurons = []
+        self.internal_neurons= []
+        self.output_neurons = []
         
-            #== Create the input neurons, internal neurons, output neurons ==#
-            self.input_neurons = []
-            self.internal_neurons= []
-            self.output_neurons = []
+        for id in available_input_neurons:
+            self.input_neurons.append( get_input_neuron(id) )
+        
+        for i in range(len(available_internal_neurons)):
+            self.internal_neurons.append([])
+            for id in available_internal_neurons[i]:
+                self.internal_neurons[-1].append( Internal_Neuron(1,id) )
+        
+        for id in available_output_neurons:
+            self.output_neurons.append( get_output_neuron(id) )
+        #======#
+        
+        #==- Make connexions between neurons -==#
+        for gene in self.genome :
             
-            for id in available_input_neurons:
-                self.input_neurons.append( get_input_neuron(id) )
+            inputType = gene.sequence[0]
+            inputID = arr2int(gene.sequence[1:8])
             
-            for i in range(len(available_internal_neurons)):
-                self.internal_neurons.append([])
-                for id in available_internal_neurons[i]:
-                    self.internal_neurons[-1].append( Internal_Neuron(1,id) )
+            sinkType = gene.sequence[8]
+            sinkID = arr2int(gene.sequence[9:16])
             
-            for id in available_output_neurons:
-                self.output_neurons.append( get_output_neuron(id) )
-            #======#
+            weight = int2weight(arr2int(gene.sequence[16:32]))
             
-            
-            #==- Make connexions between neurons -==#
-            for gene in self.genome :
+            # Input is from an input neuron
+            if(inputType == 0):
                 
-                inputType = gene.sequence[0]
-                inputID = arr2int(gene.sequence[1:8])
+                found = False
+                while(not found):                        
+                    for x in self.input_neurons:
+                        if(not found and (x.ID == inputID) ):
+                            neuron = x
+                            found = True
+            
+            
+            # Input is from an internal neuron
+            else:
                 
-                sinkType = gene.sequence[8]
-                sinkID = arr2int(gene.sequence[9:16])
-                
-                weight = int2weight(arr2int(gene.sequence[16:32]))
-                
-                # Input is from an input neuron
-                if(inputType == 0):
+                found = False
+                input_layer = 0
+                while(not found):                        
+                    for x in self.internal_neurons[input_layer]:
+                        if(not found and (x.ID == inputID) ):
+                            neuron = x
+                            found = True
                     
-                    found = False
-                    while(not found):                        
-                        for x in self.input_neurons:
-                            if(not found and (x.ID == inputID) ):
-                                neuron = x
-                                found = True
+                    input_layer += 1
+                                    
+            neuron.output_neurons_count += 1
+            
+            # Output is to an internal neuron
+            if(sinkType == 0):
                 
-                
-                # Input is from an internal neuron
-                else:
+                found = False
+                input_layer = 0
+                while(not found):                        
+                    for x in self.internal_neurons[input_layer]:
+                        if(not found and (x.ID == sinkID) ):
+                            found = True
+                            
+                            neuron.targets.append( ( weight , x ) )
+                            
+                            x.input_neurons_count += 1
+                            x.feeders.append(neuron)
+                            
                     
-                    found = False
-                    input_layer = 0
-                    while(not found):                        
-                        for x in self.internal_neurons[input_layer]:
-                            if(not found and (x.ID == inputID) ):
-                                neuron = x
-                                found = True
+                    input_layer += 1
+                            
+            # Output is to an output neuron
+            else:
+                
+                found = False
+                while(not found):                        
+                    for x in self.output_neurons:
+                        if(not found and (x.ID == sinkID)):
+                            found = True
+                            
+                            neuron.targets.append( ( weight , x ) )
+                            
+                            x.input_neurons_count += 1
+                  
+                            x.feeders.append(neuron)
+        
+        #===- End of making connexions between neurons-===#
+        
+        
+        #==- Remove the lonely neurons :( -==#
+        found_lonely = True
+        
+        while( found_lonely ):
+            
+            found_lonely = False
+            
+            for i in range(len(self.input_neurons)-1,-1,-1):
+                neuron = self.input_neurons[i]
+                if(neuron.output_neurons_count == 0):
+                    found_lonely = True
+                    
+                    # Remove the input from neurons forward
+                    for target in neuron.targets:
+                        weight,neuron2 = target
                         
-                        input_layer += 1
-                                        
-                neuron.output_neurons_count += 1
-                
-                # Output is to an internal neuron
-                if(sinkType == 0):
-                    
-                    found = False
-                    input_layer = 0
-                    while(not found):                        
-                        for x in self.internal_neurons[input_layer]:
-                            if(not found and (x.ID == sinkID) ):
-                                found = True
-                                
-                                neuron.targets.append( ( weight , x ) )
-                                
-                                x.input_neurons_count += 1
-                                x.feeders.append(neuron)
-                                
+                        neuron2.input_neurons_count -= 1
+                        neuron2.feeders.remove(neuron)
                         
-                        input_layer += 1
-                                
-                # Output is to an output neuron
-                else:
-                    
-                    found = False
-                    while(not found):                        
-                        for x in self.output_neurons:
-                            if(not found and (x.ID == sinkID)):
-                                found = True
-                                
-                                neuron.targets.append( ( weight , x ) )
-                                
-                                x.input_neurons_count += 1
-                                x.feeders.append(neuron)
-            #===--===#
+                    self.input_neurons.pop(i)
             
             
-            #==- Remove the lonely neurons :( -==#
-            found_lonely = True
-            
-            while( found_lonely ):
-                
-                found_lonely = False
-                
-                for i in range(len(self.input_neurons)-1,-1,-1):
-                    neuron = self.input_neurons[i]
-                    if(neuron.output_neurons_count == 0):
+            for i in range(len(self.internal_neurons)):
+                neuron_layer = self.internal_neurons[i]
+                for j in range(len(self.internal_neurons[i])-1,-1,-1):
+                    neuron = self.internal_neurons[i][j]
+                    if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
                         found_lonely = True
                         
                         # Remove the input from neurons forward
@@ -507,52 +513,35 @@ class Brain:
                             
                             neuron2.input_neurons_count -= 1
                             neuron2.feeders.remove(neuron)
-                            
-                        self.input_neurons.pop(i)
-                
-                
-                for i in range(len(self.internal_neurons)):
-                    neuron_layer = self.internal_neurons[i]
-                    for j in range(len(self.internal_neurons[i])-1,-1,-1):
-                        neuron = self.internal_neurons[i][j]
-                        if(neuron.output_neurons_count == 0 or neuron.input_neurons_count == 0):
-                            found_lonely = True
-                            
-                            # Remove the input from neurons forward
-                            for target in neuron.targets:
-                                weight,neuron2 = target
-                                
-                                neuron2.input_neurons_count -= 1
-                                neuron2.feeders.remove(neuron)
-                            
-                            # Remove the target from neurons backward
-                            for feeder in neuron.feeders:
-                                feeder.output_neuron_count -= 1
-                                
-                                for k in range(len(feeder.targets)-1,-1,-1):
-                                    if(feeder.targets[k][1] == neuron):
-                                        feeder.targets.pop(k)
-                                    
-                            self.internal_neurons[i].pop(j)
-                        
-                for i in range(len(self.output_neurons)-1,-1,-1):
-                    neuron = self.output_neurons[i]
-                    if(neuron.input_neurons_count == 0):
-                        found_lonely = True
                         
                         # Remove the target from neurons backward
                         for feeder in neuron.feeders:
-                            feeder.output_neuron_count -= 1
+                            feeder.output_neurons_count -= 1
                             
-                            for j in range(len(feeder.targets)-1,-1,-1):
-                                if(feeder.targets[j][1] == neuron):
-                                    feeder.targets.pop(j)
+                            for k in range(len(feeder.targets)-1,-1,-1):
+                                if(feeder.targets[k][1] == neuron):
+                                    feeder.targets.pop(k)
+                                
+                        self.internal_neurons[i].pop(j)
+                    
+            for i in range(len(self.output_neurons)-1,-1,-1):
+                neuron = self.output_neurons[i]
+                if(neuron.input_neurons_count == 0):
+                    found_lonely = True
+                    
+                    # Remove the target from neurons backward
+                    for feeder in neuron.feeders:
+                        feeder.output_neurons_count -= 1
                         
-                        self.output_neurons.pop(i)
-            #===--===#
+                        for j in range(len(feeder.targets)-1,-1,-1):
+                            if(feeder.targets[j][1] == neuron):
+                                feeder.targets.pop(j)
+                    
+                    self.output_neurons.pop(i)
         
-            if(onlyValid and (len(self.input_neurons)==0 or len(self.output_neurons)==0)):
-                valid = False
+        #===- End of removing the lonely neurons -===#
+    
+
         
 
 

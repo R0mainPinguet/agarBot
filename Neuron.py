@@ -76,8 +76,8 @@ class Neuron:
 # 1 - Sinusoidal ( 60 frames period )
 # 2 - Closest Ennemy Distance
 # 3 - Closest Ennemy Size Ratio
-# 4 - Closest Ennemy Size Difference
-# 5 - Closest Food Distance
+# 4 - Closest Food Distance
+# 5 - Closest Projectile Distance
 # 6 - Host Size
 # 7 - Host Rank
 

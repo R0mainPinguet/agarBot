@@ -65,12 +65,14 @@ for i in range(bots_count):
 
 print("All bots are generated !")
 
-food = Food(rules)
-projectiles = Projectiles(rules)
+
 #====#
 
 for generation in range(generations):
     
+    food = Food(rules)
+    projectiles = Projectiles(rules)
+
     print("Génération " + str(generation+1) )
     
     frame = 0
@@ -119,21 +121,24 @@ for generation in range(generations):
         new_blobs_list = []
         
         #== Selection ==#
+        print("Sélection !")
         blobs_to_crossover = Select(blobs_list,new_blobs_list,rules,logList)
         #====#
         
         #== Crossover ==#
+        print("Crossover")
         Crossover( blobs_to_crossover , blobs_list , new_blobs_list , rules , logList )
         #====#
         
         #== Mutation ==#
+        print("Mutation")
         Mutate(new_blobs_list , rules , logList )
         #====#
         
         blobs_list = new_blobs_list
         
         for i in range(bots_count):
-            blobs_list[i].reset(rules,i*rules["MAX_SUB_BLOB"],blobs_infos)
+            blobs_list[i].reset(rules,blobs_infos)
     
 logTxt = ''.join(logList)
 

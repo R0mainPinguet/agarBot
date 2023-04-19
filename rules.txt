@@ -1,16 +1,16 @@
 # GENERAL #
 player_count 1
-bots_count 4
+bots_count 2
 game_length 1800
 
 # WINDOW #
 FPS 60
-width 800
+width 1200
 height 800
 
 # MAP #
-borders_X 800
-borders_Y 800
+borders_X 1600
+borders_Y 1600
 
 # FOOD #
 max_food 50
@@ -35,7 +35,7 @@ eating_percentage 90
 genomeSize 1
 
 # LEARNING #
-generations 2
+generations 10
 crossover_prob 0.5
 mutation_prob 0.1
 elitism 1

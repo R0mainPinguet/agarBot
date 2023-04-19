@@ -10,6 +10,11 @@ from Bot import Bot
 from utils import loadRules,compute_ranks,compute_all_distances,check_collisions
 
 rules = loadRules("rules.txt")
+
+rules["available_input_neurons"] = [0,1,2,3,6,7]
+rules["available_internal_neurons"] = [[0,1,2],[3,4]]
+rules["available_output_neurons"] = [0,1,2,3,4]
+
 print("#== RULES ==#")
 print(rules)
 print("#====#")
@@ -38,6 +43,7 @@ center_vect = pygame.math.Vector2(borders_X/2,borders_Y/2)
 pygame.init()
 pygame.display.set_caption('Agario')
 
+# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 screen = pygame.display.set_mode( (width,height) )
 screen_rect = screen.get_rect()
 
@@ -158,5 +164,10 @@ while running:
     
     frame += 1
     #====#
+    
+for i in range(1,len(blobs_list)):
+    bot = blobs_list[i]
+    bot.brain.plot( int(bot.fitness), rules , "logs/GG_" + str(bot.ID) + ".png")
+    print("Fitness de l'individu " + str(bot.ID) + " : " + str(bot.fitness) )
     
 sys.exit()
